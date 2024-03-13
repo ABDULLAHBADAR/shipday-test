@@ -4,7 +4,8 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
-app.get('/move-order-to-shipday', function (req, res) {
+app.post('/move-order-to-shipday', function (req, res) {
+	console.log(req.body)
   res.send('Hello World!');
 });
 
