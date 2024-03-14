@@ -27,7 +27,7 @@ app.post("/move-order-to-shipday", function (req, res) {
   );
 
   orderInfoRequest.setRestaurantPhoneNumber("+14152392013");
-  orderInfoRequest.setExpectedDeliveryDate("2021-06-03");
+  orderInfoRequest.setExpectedDeliveryDate("2024-06-03");
   orderInfoRequest.setExpectedDeliveryTime("17:45:00");
   orderInfoRequest.setExpectedPickupTime("19:22:00");
   orderInfoRequest.setPickupLatLong(41.53867, -72.0827);
@@ -57,8 +57,14 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
-    .then((res) => console.log(res))
-    .catch((e) => console.log(e));
+    .then((res) => {
+      console.log('no error found')
+      console.log(res)
+    })
+    .catch((e) => {
+      console.log("error found")
+      console.log(e)
+    });
 
   res.send("Hello World!");
 });
