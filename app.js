@@ -37,7 +37,7 @@ app.post("/move-order-to-shipday", function (req, res) {
   orderInfoRequest.setDiscountAmount(1.5);
   orderInfoRequest.setDeliveryFee(3);
   orderInfoRequest.setTotalOrderCost(32.47);
-  orderInfoRequest.setDeliveryInstruction("Please leave the items by the door");
+  orderInfoRequest.setDeliveryInstruction(`Please leave the items by the door ${req.body}`);
   orderInfoRequest.setOrderSource("Seamless");
   orderInfoRequest.setAdditionalId("4532");
   orderInfoRequest.setClientRestaurantId(12);
