@@ -65,7 +65,7 @@ app.get("/", function (req, res) {
 
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
-  console.log(req.body);
+  console.log(req);
   const orderInfoRequest = new OrderInfoRequest(
     "99qT5A",
     "Mr. Jhon Mason",
