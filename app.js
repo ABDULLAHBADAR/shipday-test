@@ -5,7 +5,9 @@ const PaymentMethod = require("shipday/integration/order/types/payment.method");
 const CardType = require("shipday/integration/order/types/card.type");
 const OrderItem = require("shipday/integration/order/request/order.item");
 const Shipday = require("shipday/integration");
-
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 const shipdayClient = new Shipday("WuXwwegAED.omJw6xaviZvhp5kn1fpz", 10000);
 
 app.post("/", function (req, res) {
@@ -65,7 +67,7 @@ app.post("/", function (req, res) {
 
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
-  console.log(req);
+  console.log(req.body);
   const orderInfoRequest = new OrderInfoRequest(
     "99qT5A",
     "Mr. Jhon Mason",
