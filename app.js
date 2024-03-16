@@ -10,6 +10,7 @@ const shipdayClient = new Shipday("WuXwwegAED.omJw6xaviZvhp5kn1fpz", 10000);
 
 app.get("/", function (req, res) {
   console.log("done");
+  console.log(req)
   const orderInfoRequest = new OrderInfoRequest(
     "99qT5A",
     "Mr. Jhon Mason",
