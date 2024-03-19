@@ -18,6 +18,7 @@ app.get("/", function (req, res) {
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
+  console.log(req.body.orderDetails.product)
   let payload = req.body;
 
   let deliveryTime = payload.job_delivery_datetime.split(' ');
@@ -33,26 +34,24 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address == payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
   orderInfoRequest.setExpectedDeliveryDate(convertDateFormat(deliveryTime[0]));
-  // orderInfoRequest.setExpectedPickupDate(convertDateFormat(deliveryTime[0]));
   console.log('time is', convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]))
   orderInfoRequest.setExpectedDeliveryTime(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]));
-  // console.log(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]))
-  // res.send("Hello World!");
-  // return
-  // orderInfoRequest.setExpectedPickupTime(convertTo24Hour(pickupTime[1] + " " + pickupTime[2]));
   orderInfoRequest.setPickupLatLong(payload.job_pickup_latitude, payload.job_pickup_longitude);
   orderInfoRequest.setDeliveryLatLong(payload.job_latitude, payload.job_longitude);
-  // orderInfoRequest.setTips(payload.tip.toFixed(2));
-  // orderInfoRequest.setTax(payload.tax.toFixed(2));
+  if(payload.tip != 0){
+    orderInfoRequest.setTips(payload.tip.toFixed(2));
+  }
+  if(payload.tax != 0){
+    orderInfoRequest.setTax(payload.tax.toFixed(2));
+  }
+  if(payload.job_description != ""){
+    orderInfoRequest.setDeliveryInstruction(
+      payload.job_description
+    );
+  }
   // orderInfoRequest.setDeliveryFee(3);
-  orderInfoRequest.setTotalOrderCost(payload.total_order_amount);
-  orderInfoRequest.setDeliveryInstruction(
-    payload.job_description
-  );
   // orderInfoRequest.setOrderSource("Seamless");
-  // orderInfoRequest.setAdditionalId("4532");
-  // orderInfoRequest.setClientRestaurantId(12);
-
+  orderInfoRequest.setTotalOrderCost(payload.total_order_amount);
   const paymentOption = PaymentMethod.CREDIT_CARD;
   const cardType = CardType.AMEX;
 
