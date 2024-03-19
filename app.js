@@ -18,7 +18,7 @@ app.get("/", function (req, res) {
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
-  console.log(req.body.orderDetails[0].product)
+  console.log(req.body.orderDetails)
   let payload = req.body;
 
   let deliveryTime = payload.job_delivery_datetime.split(' ');
