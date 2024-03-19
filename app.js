@@ -10,91 +10,48 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const shipdayClient = new Shipday("WuXwwegAED.omJw6xaviZvhp5kn1fpz", 10000);
 
-app.post("/", function (req, res) {
-  console.log("done");
-  console.log(req)
-  const orderInfoRequest = new OrderInfoRequest(
-    "99qT5A",
-    "Mr. Jhon Mason",
-    "556 Crestlake Dr, San Francisco, CA 94132, USA",
-    "jhonMason@gmail.com",
-    "+14152392212",
-    "Popeyes Louisiana Kitchen",
-    "890 Geneva Ave, San Francisco, CA 94112, United States"
-  );
+app.get("/", function (req, res) {
+  res.send('Shipday Server running here')
 
-  orderInfoRequest.setRestaurantPhoneNumber("+14152392013");
-  orderInfoRequest.setExpectedDeliveryDate("2024-06-03");
-  orderInfoRequest.setExpectedDeliveryTime("17:45:00");
-  orderInfoRequest.setExpectedPickupTime("19:22:00");
-  orderInfoRequest.setPickupLatLong(41.53867, -72.0827);
-  orderInfoRequest.setDeliveryLatLong(41.55467, -72.0927);
-  orderInfoRequest.setTips(2.5);
-  orderInfoRequest.setTax(1.5);
-  orderInfoRequest.setDiscountAmount(1.5);
-  orderInfoRequest.setDeliveryFee(3);
-  orderInfoRequest.setTotalOrderCost(32.47);
-  orderInfoRequest.setDeliveryInstruction(`Please leave the items by the door`);
-  orderInfoRequest.setOrderSource("Seamless");
-  orderInfoRequest.setAdditionalId("4532");
-  orderInfoRequest.setClientRestaurantId(12);
-
-  const paymentOption = PaymentMethod.CREDIT_CARD;
-  const cardType = CardType.AMEX;
-
-  orderInfoRequest.setPaymentMethod(paymentOption);
-  orderInfoRequest.setCreditCardType(cardType);
-
-  const itemsArr = [];
-  itemsArr.push(new OrderItem("Double Cheese Burger", 23, 1));
-
-  itemsArr.push(new OrderItem("Coke", 5, 1));
-
-  orderInfoRequest.setOrderItems(itemsArr);
-
-  shipdayClient.orderService
-    .insertOrder(orderInfoRequest)
-    .then((res) => {
-      console.log("no error found");
-      console.log(res);
-    })
-    .catch((e) => {
-      console.log("error found");
-      console.log(e);
-    });
-  res.send("Hello World!");
 });
 
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
+  let payload = req.body;
+
+  let deliveryTime = payload.job_delivery_datetime.split(' ');
   const orderInfoRequest = new OrderInfoRequest(
-    "99qT5A",
-    "Mr. Jhon Mason",
-    "556 Crestlake Dr, San Francisco, CA 94132, USA",
-    "jhonMason@gmail.com",
-    "+14152392212",
-    "Popeyes Louisiana Kitchen",
-    "890 Geneva Ave, San Francisco, CA 94112, United States"
+    payload.job_id,
+    payload.merchant_address == payload.job_address ? payload.merchant_name : payload.customer_username,
+    payload.job_address,
+    payload.merchant_address == payload.job_address ? payload.merchant_email : payload.customer_email,
+    payload.merchant_address == payload.job_address ? payload.merchant_phone_number : payload.customer_phone,
+    payload.merchant_address == payload.job_address ? payload.customer_username : payload.merchant_name,
+    payload.job_pickup_address,
   );
 
-  orderInfoRequest.setRestaurantPhoneNumber("+14152392013");
-  orderInfoRequest.setExpectedDeliveryDate("2024-06-03");
-  orderInfoRequest.setExpectedDeliveryTime("17:45:00");
-  orderInfoRequest.setExpectedPickupTime("19:22:00");
-  orderInfoRequest.setPickupLatLong(41.53867, -72.0827);
-  orderInfoRequest.setDeliveryLatLong(41.55467, -72.0927);
-  orderInfoRequest.setTips(2.5);
-  orderInfoRequest.setTax(1.5);
-  orderInfoRequest.setDiscountAmount(1.5);
-  orderInfoRequest.setDeliveryFee(3);
-  orderInfoRequest.setTotalOrderCost(32.47);
+  orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address == payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
+  orderInfoRequest.setExpectedDeliveryDate(convertDateFormat(deliveryTime[0]));
+  // orderInfoRequest.setExpectedPickupDate(convertDateFormat(deliveryTime[0]));
+  console.log('time is', convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]))
+  orderInfoRequest.setExpectedDeliveryTime(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]));
+  // console.log(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]))
+  // res.send("Hello World!");
+  // return
+  // orderInfoRequest.setExpectedPickupTime(convertTo24Hour(pickupTime[1] + " " + pickupTime[2]));
+  orderInfoRequest.setPickupLatLong(payload.job_pickup_latitude, payload.job_pickup_longitude);
+  orderInfoRequest.setDeliveryLatLong(payload.job_latitude, payload.job_longitude);
+  // orderInfoRequest.setTips(payload.tip.toFixed(2));
+  // orderInfoRequest.setTax(payload.tax.toFixed(2));
+  // orderInfoRequest.setDeliveryFee(3);
+  orderInfoRequest.setTotalOrderCost(payload.total_order_amount);
   orderInfoRequest.setDeliveryInstruction(
-    `Please leave the items by the door ${req.body}`
+    payload.job_description
   );
-  orderInfoRequest.setOrderSource("Seamless");
-  orderInfoRequest.setAdditionalId("4532");
-  orderInfoRequest.setClientRestaurantId(12);
+  // orderInfoRequest.setOrderSource("Seamless");
+  // orderInfoRequest.setAdditionalId("4532");
+  // orderInfoRequest.setClientRestaurantId(12);
 
   const paymentOption = PaymentMethod.CREDIT_CARD;
   const cardType = CardType.AMEX;
@@ -102,12 +59,12 @@ app.post("/move-order-to-shipday", function (req, res) {
   orderInfoRequest.setPaymentMethod(paymentOption);
   orderInfoRequest.setCreditCardType(cardType);
 
-  const itemsArr = [];
-  itemsArr.push(new OrderItem("Double Cheese Burger", 23, 1));
+  // const itemsArr = [];
+  // itemsArr.push(new OrderItem("Double Cheese Burger", 23, 1));
 
-  itemsArr.push(new OrderItem("Coke", 5, 1));
+  // itemsArr.push(new OrderItem("Coke", 5, 1));
 
-  orderInfoRequest.setOrderItems(itemsArr);
+  // orderInfoRequest.setOrderItems(itemsArr);
 
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
@@ -122,6 +79,31 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   res.send("Hello World!");
 });
+
+function convertDateFormat(dateString) {
+  const dateParts = dateString.split('/');
+  const formattedDate = `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
+  
+  return formattedDate;
+}
+
+function convertTo24Hour(time12h) {
+  const [time, period] = time12h.split(' ');
+
+  let [hours, minutes] = time.split(':');
+
+  hours = parseInt(hours);
+  minutes = parseInt(minutes);
+
+  if (period.toLowerCase() === 'pm' && hours < 12) {
+      hours += 12;
+  } else if (period.toLowerCase() === 'am' && hours === 12) {
+      hours = 0;
+  }
+
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+}
+
 
 app.listen(3000, function () {
   console.log("Example app listening on port 3000!");
