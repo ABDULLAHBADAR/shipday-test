@@ -12,7 +12,6 @@ const shipdayClient = new Shipday("WuXwwegAED.omJw6xaviZvhp5kn1fpz", 10000);
 
 app.get("/", function (req, res) {
   res.send('Shipday Server running here')
-
 });
 
 app.post("/move-order-to-shipday", function (req, res) {
@@ -34,23 +33,20 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address == payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
   orderInfoRequest.setExpectedDeliveryDate(convertDateFormat(deliveryTime[0]));
-  console.log('time is', convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]))
   orderInfoRequest.setExpectedDeliveryTime(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]));
   orderInfoRequest.setPickupLatLong(payload.job_pickup_latitude, payload.job_pickup_longitude);
   orderInfoRequest.setDeliveryLatLong(payload.job_latitude, payload.job_longitude);
   if(payload.tip != 0){
-    orderInfoRequest.setTips(payload.tip.toFixed(2));
+    orderInfoRequest.setTips(payload.tip);
   }
   if(payload.tax != 0){
-    orderInfoRequest.setTax(payload.tax.toFixed(2));
+    orderInfoRequest.setTax(payload.tax);
   }
   if(payload.job_description != ""){
     orderInfoRequest.setDeliveryInstruction(
       payload.job_description
     );
   }
-  // orderInfoRequest.setDeliveryFee(3);
-  // orderInfoRequest.setOrderSource("Seamless");
   orderInfoRequest.setTotalOrderCost(payload.total_order_amount);
   const paymentOption = PaymentMethod.CREDIT_CARD;
   const cardType = CardType.AMEX;
@@ -58,13 +54,16 @@ app.post("/move-order-to-shipday", function (req, res) {
   orderInfoRequest.setPaymentMethod(paymentOption);
   orderInfoRequest.setCreditCardType(cardType);
 
-  // const itemsArr = [];
-  // itemsArr.push(new OrderItem("Double Cheese Burger", 23, 1));
+  const itemsArr = [];
 
-  // itemsArr.push(new OrderItem("Coke", 5, 1));
-
-  // orderInfoRequest.setOrderItems(itemsArr);
-
+  payload.orderDetails.forEach(detail => {
+    const productName = detail.product.product_name;
+    const price = detail.product.unit_price;
+    const quantity = detail.product.quantity;
+    
+    itemsArr.push(new OrderItem(productName, price, quantity));
+  });
+  orderInfoRequest.setOrderItems(itemsArr);
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
     .then((res) => {
