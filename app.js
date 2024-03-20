@@ -8,7 +8,7 @@ const Shipday = require("shipday/integration");
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-const shipdayClient = new Shipday("WuXwwegAED.omJw6xaviZvhp5kn1fpz", 10000);
+require('dotenv').config()
 
 app.get("/", function (req, res) {
   res.send('Shipday Server running here')
@@ -17,8 +17,9 @@ app.get("/", function (req, res) {
 app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
-  console.log(req.body.orderDetails)
   let payload = req.body;
+  let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
+  const shipdayClient = new Shipday(process.env[storeApi] || process.env.MAIN_SHIPDAY_API, 10000);
 
   let deliveryTime = payload.job_delivery_datetime.split(' ');
   const orderInfoRequest = new OrderInfoRequest(
@@ -67,7 +68,6 @@ app.post("/move-order-to-shipday", function (req, res) {
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
     .then((res) => {
-      console.log("no error found");
       console.log(res);
     })
     .catch((e) => {
@@ -75,7 +75,7 @@ app.post("/move-order-to-shipday", function (req, res) {
       console.log(e);
     });
 
-  res.send("Hello World!");
+  res.send("Shipway Order Created");
 });
 
 function convertDateFormat(dateString) {
