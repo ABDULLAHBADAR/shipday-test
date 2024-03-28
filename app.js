@@ -1,5 +1,6 @@
 var express = require("express");
 var app = express();
+const axios = require('axios');
 const OrderInfoRequest = require("shipday/integration/order/request/order.info.request");
 const PaymentMethod = require("shipday/integration/order/types/payment.method");
 const CardType = require("shipday/integration/order/types/card.type");
@@ -19,6 +20,17 @@ app.post("/move-order-to-shipday", function (req, res) {
   console.log(req.body);
   let payload = req.body;
   let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
+
+  axios.post('https://hooks.zapier.com/hooks/catch/18380139/3x77ghl/', payload)
+    .then(response => {
+      console.log('Webhook sent to Zapier:', response.data);
+      // res.sendStatus(200);
+    })
+    .catch(error => {
+      console.error('Error sending webhook to Zapier:', error);
+      // res.sendStatus(500);
+    });
+
   const shipdayClient = new Shipday(process.env[storeApi] || process.env.MAIN_SHIPDAY_API, 10000);
 
   let deliveryTime = payload.job_delivery_datetime.split(' ');
