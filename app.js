@@ -90,6 +90,28 @@ app.post("/move-order-to-shipday", function (req, res) {
   res.send("Shipway Order Created");
 });
 
+app.post("/edit-order-on-Monday", function (req, res) {
+  console.log("moving order");
+  console.log(req.body);
+  let payload = req.body;
+  let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
+
+  axios.post(process.env.XPRESSRUN_URL, payload, {
+    headers: {
+        'Authorization': `Bearer ${process.env.XPRESSRUN_TOKEN}`,
+        'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+      console.log('Request sent to Xpressrun API:', response.data);
+      // Handle response as needed
+  })
+  .catch(error => {
+      console.error('Error sending request to Xpressrun API:', error);
+      // Handle error as needed
+  });
+})
+
 function convertDateFormat(dateString) {
   const dateParts = dateString.split('/');
   const formattedDate = `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
