@@ -10,6 +10,8 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 require('dotenv').config()
+const mondaySdk = require('monday-sdk-js');
+const monday = mondaySdk();
 
 app.get("/", function (req, res) {
   res.send('Shipday Server running here')
@@ -90,26 +92,64 @@ app.post("/move-order-to-shipday", function (req, res) {
   res.send("Shipway Order Created");
 });
 
-app.post("/edit-order-on-Monday", function (req, res) {
+app.post("/edit-order-on-Monday", function(req, res) {
   console.log("moving order");
   console.log(req.body);
   let payload = req.body;
-  let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
 
-  axios.post(process.env.XPRESSRUN_URL, payload, {
-    headers: {
-        'Authorization': `Bearer ${process.env.XPRESSRUN_TOKEN}`,
-        'Content-Type': 'application/json'
+  const apiToken = process.env.MONDAY_API_KEY;
+  monday.setToken(apiToken)
+  const testQuery = 
+  `query {
+    items_page_by_column_values (limit: 50, board_id: 6343774897, columns: [{column_id: "name", column_values: ["${payload.job_id}"]}]) {
+      items {
+        id
+      }
+    }
+  }`
+  monday.api(testQuery)
+  .then(response => {
+    const itemId = response?.data?.items_page_by_column_values?.items[0]?.id
+    console.log(response)
+    if(itemId){
+      payload.columnId = itemId;
+      console.log('coulmn id is', payload.columnId)
+
+      axios.post('https://hooks.zapier.com/hooks/catch/18380139/3poxutk/', payload)
+      .then(response => {
+        console.log('Webhook sent to Zapier:');
+        // res.sendStatus(200);, response.data
+      })
+      .catch(error => {
+        console.error('Error sending webhook to Zapier:');
+        // res.sendStatus(500); , error
+      });
+      return
     }
   })
-  .then(response => {
-      console.log('Request sent to Xpressrun API:', response.data);
-      // Handle response as needed
-  })
   .catch(error => {
-      console.error('Error sending request to Xpressrun API:', error);
-      // Handle error as needed
+    console.error('Error updating item:', error);
   });
+
+  res.send('testing')
+  return
+
+  // Test Code ends here
+  // axios.post(process.env.XPRESSRUN_URL, payload, {
+  //   headers: {
+  //       'X-Yelo-Token': process.env.XPRESSRUN_TOKEN,
+  //       'Content-Type': 'application/json'
+  //   }
+  // })
+  // .then(response => {
+  //     console.log('Request sent to Xpressrun API:', response.data);
+  //     // Handle response as needed
+  // })
+  // .catch(error => {
+  //     console.error('Error sending request to Xpressrun API:', error);
+  //     // Handle error as needed
+  // });
+  // res.send("Order Edited");
 })
 
 function convertDateFormat(dateString) {
