@@ -122,7 +122,7 @@ app.post("/edit-order-on-Monday", function(req, res) {
       })
       .catch(error => {
         console.error('Error sending webhook to Zapier:');
-        // res.sendStatus(500); , error
+        // res.sendStatus(500); error
       });
       return
     }
