@@ -21,6 +21,11 @@ app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
   let payload = req.body;
+
+  if (!payload) {
+    return res.status(400).send("Bad request: No payload provided.");
+  }
+
   let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
 
   axios.post('https://hooks.zapier.com/hooks/catch/18380139/3x77ghl/', payload)
@@ -35,29 +40,35 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   const shipdayClient = new Shipday(process.env[storeApi] || process.env.MAIN_SHIPDAY_API, 10000);
 
-  let deliveryTime = payload.job_delivery_datetime.split(' ');
+  let deliveryTime = payload.job_delivery_datetime?.split(' ');
+  if (!deliveryTime) {
+    console.error("Invalid delivery time format.");
+    return res.status(400).send("Bad request: Invalid delivery time format.");
+  }
+
   const orderInfoRequest = new OrderInfoRequest(
     payload.job_id,
-    payload.merchant_address == payload.job_address ? payload.merchant_name : payload.customer_username,
+    payload.merchant_address === payload.job_address ? payload.merchant_name : payload.customer_username,
     payload.job_address,
-    payload.merchant_address == payload.job_address ? payload.merchant_email : payload.customer_email,
-    payload.merchant_address == payload.job_address ? payload.merchant_phone_number : payload.customer_phone,
-    payload.merchant_address == payload.job_address ? payload.customer_username : payload.merchant_name,
+    payload.merchant_address === payload.job_address ? payload.merchant_email : payload.customer_email,
+    payload.merchant_address === payload.job_address ? payload.merchant_phone_number : payload.customer_phone,
+    payload.merchant_address === payload.job_address ? payload.customer_username : payload.merchant_name,
     payload.job_pickup_address,
   );
 
-  orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address == payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
+  orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address === payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
   orderInfoRequest.setExpectedDeliveryDate(convertDateFormat(deliveryTime[0]));
   orderInfoRequest.setExpectedDeliveryTime(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]));
   orderInfoRequest.setPickupLatLong(payload.job_pickup_latitude, payload.job_pickup_longitude);
   orderInfoRequest.setDeliveryLatLong(payload.job_latitude, payload.job_longitude);
-  if(payload.tip != 0){
+  
+  if(payload.tip !== 0){
     orderInfoRequest.setTips(payload.tip);
   }
-  if(payload.tax != 0){
+  if(payload.tax !== 0){
     orderInfoRequest.setTax(payload.tax);
   }
-  if(payload.job_description != ""){
+  if(payload.job_description !== ""){
     orderInfoRequest.setDeliveryInstruction(
       payload.job_description
     );
@@ -71,31 +82,38 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   const itemsArr = [];
 
-  payload.orderDetails.forEach(detail => {
-    const productName = detail.product.product_name;
-    const price = detail.product.unit_price;
-    const quantity = detail.product.quantity;
+  payload.orderDetails?.forEach(detail => {
+    const productName = detail?.product?.product_name;
+    const price = detail?.product?.unit_price;
+    const quantity = detail?.product?.quantity;
     
-    itemsArr.push(new OrderItem(productName, price, quantity));
+    if (productName && price && quantity) {
+      itemsArr.push(new OrderItem(productName, price, quantity));
+    } else {
+      console.error("Invalid order detail format:", detail);
+    }
   });
-  orderInfoRequest.setOrderItems(itemsArr);
+
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
-    .then((res) => {
-      console.log(res);
+    .then((response) => {
+      console.log(response);
+      res.send("Shipway Order Created");
     })
-    .catch((e) => {
-      console.log("error found");
-      console.log(e);
+    .catch((error) => {
+      console.error("Error creating Shipway order:", error);
+      res.status(500).send("Internal Server Error");
     });
-
-  res.send("Shipway Order Created");
 });
 
 app.post("/edit-order-on-Monday", function(req, res) {
-  console.log("moving order");
+  console.log("updating order");
   console.log(req.body);
   let payload = req.body;
+
+  if (!payload || !payload.job_id) {
+    return res.status(400).send('Bad request: Missing job ID in payload.');
+  }
 
   const apiToken = process.env.MONDAY_API_KEY;
   monday.setToken(apiToken)
@@ -118,21 +136,22 @@ app.post("/edit-order-on-Monday", function(req, res) {
       axios.post('https://hooks.zapier.com/hooks/catch/18380139/3poxutk/', payload)
       .then(response => {
         console.log('Webhook sent to Zapier:');
-        // res.sendStatus(200);, response.data
+        res.sendStatus(200);
       })
       .catch(error => {
-        console.error('Error sending webhook to Zapier:');
-        // res.sendStatus(500); error
+        console.error('Error sending webhook to Zapier:', error);
+        res.sendStatus(500);
       });
-      return
+      return;
+    } else {
+      console.error('Item not found on Monday board');
+      res.status(404).send('Item not found on Monday board');
     }
   })
   .catch(error => {
     console.error('Error updating item:', error);
+    res.status(500).send('Internal Server Error');
   });
-
-  res.send('testing')
-  return
 
   // Test Code ends here
   // axios.post(process.env.XPRESSRUN_URL, payload, {
