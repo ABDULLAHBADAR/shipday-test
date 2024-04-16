@@ -45,6 +45,11 @@ app.post("/move-order-to-shipday", function (req, res) {
     console.error("Invalid delivery time format.");
     return res.status(400).send("Bad request: Invalid delivery time format.");
   }
+  let pickupTime = payload.job_pickup_datetime?.split(' ');
+  if (!pickupTime) {
+    console.error("Invalid pickup time format.");
+    return res.status(400).send("Bad request: Invalid pickup time format.");
+  }
 
   const orderInfoRequest = new OrderInfoRequest(
     payload.job_id,
@@ -59,6 +64,7 @@ app.post("/move-order-to-shipday", function (req, res) {
   orderInfoRequest.setRestaurantPhoneNumber(payload.merchant_address === payload.job_address ? payload.job_pickup_phone : payload.merchant_phone_number);
   orderInfoRequest.setExpectedDeliveryDate(convertDateFormat(deliveryTime[0]));
   orderInfoRequest.setExpectedDeliveryTime(convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2]));
+  orderInfoRequest.setExpectedPickupTime(convertTo24Hour(pickupTime[1] + " " + pickupTime[2]));
   orderInfoRequest.setPickupLatLong(payload.job_pickup_latitude, payload.job_pickup_longitude);
   orderInfoRequest.setDeliveryLatLong(payload.job_latitude, payload.job_longitude);
   
