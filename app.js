@@ -93,7 +93,7 @@ app.post("/move-order-to-shipday", function (req, res) {
       console.error("Invalid order detail format:", detail);
     }
   });
-
+  orderInfoRequest.setOrderItems(itemsArr);
   shipdayClient.orderService
     .insertOrder(orderInfoRequest)
     .then((response) => {
