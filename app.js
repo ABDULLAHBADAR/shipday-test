@@ -246,7 +246,7 @@ function setInstructionTemplate(payload){
       *For Customer - Delivery
       Adrress
       1. Call Customer 10 min before arrival
-      2. Greet with “Aloha, this is (Your Name)17 with Aloha Laundry Life.
+      2. Greet with “Aloha, this is (Your Name) with Aloha Laundry Life.
       3. Drop off (#) bags of laundry
     `
   }
