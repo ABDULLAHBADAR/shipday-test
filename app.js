@@ -21,7 +21,8 @@ app.post("/move-order-to-shipday", function (req, res) {
   console.log("moving order");
   console.log(req.body);
   let payload = req.body;
-
+  // res.send(setInstructionTemplate(payload))
+  // return 
   if (!payload) {
     return res.status(400).send("Bad request: No payload provided.");
   }
@@ -74,10 +75,11 @@ app.post("/move-order-to-shipday", function (req, res) {
   if(payload.tax !== 0){
     orderInfoRequest.setTax(payload.tax);
   }
-  if(payload.job_description !== ""){
+  let new_desc = setInstructionTemplate(payload)
+  if(new_desc){
     orderInfoRequest.setDeliveryInstruction(
-      payload.job_description
-    );
+        new_desc
+        );
   }
   orderInfoRequest.setTotalOrderCost(payload.total_order_amount);
   const paymentOption = PaymentMethod.CREDIT_CARD;
@@ -201,6 +203,55 @@ function convertTo24Hour(time12h) {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
 }
 
+function setInstructionTemplate(payload){
+  let instructions = ''
+  if(payload.task_type == 1){
+    // Apt 5D
+    instructions = `
+      For Customer - Pickup
+      Note below:
+      1. Call Customer 10 min before arrival
+      2. Greet with “Aloha, this is (Your Name) with Aloha Laundry Life.
+      3. Pick up the following items:
+      `;
+
+      payload.orderDetails?.forEach(detail => {
+          const productName = detail?.product?.product_name;
+          const quantity = detail?.product?.quantity;
+          instructions += `---\t${quantity} ${productName}\n`;
+      });
+
+      instructions += `
+      *For Laundromat - Dropoff/Delivery
+      1. Walk into ${payload?.merchant_name}
+      2. Let them know you are with Aloha Laundry Life
+      3. Drop off Order for ${payload.customer_username}
+      `;
+  }else{
+    instructions = 
+    `
+      Pikcup at Laundromat take back to cusomter:
+      For Laundromat - Pickup
+      1. Walk Into ${payload?.merchant_name}
+      2. Let them know you are with Aloha Laundry Life
+      3. Order for ${payload.customer_username}
+      4. Pick up the following items:
+      `;
+      payload.orderDetails?.forEach(detail => {
+        const productName = detail?.product?.product_name;
+        const quantity = detail?.product?.quantity;
+        instructions += `---\t${quantity} ${productName}\n`;
+    });
+      instructions += `
+      *For Customer - Delivery
+      Adrress
+      1. Call Customer 10 min before arrival
+      2. Greet with “Aloha, this is (Your Name)17 with Aloha Laundry Life.
+      3. Drop off (#) bags of laundry
+    `
+  }
+  return instructions
+}
 
 app.listen(3000, function () {
   console.log("Example app listening on port 3000!");
