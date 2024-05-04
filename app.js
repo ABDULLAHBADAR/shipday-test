@@ -29,15 +29,8 @@ app.post("/move-order-to-shipday", function (req, res) {
 
   let storeApi = `SHIPDAY_API_${payload.merchant_id}`;
 
-  axios.post('https://hooks.zapier.com/hooks/catch/18380139/3x77ghl/', payload)
-    .then(response => {
-      console.log('Webhook sent to Zapier:', response.data);
-      // res.sendStatus(200);
-    })
-    .catch(error => {
-      console.error('Error sending webhook to Zapier:', error);
-      // res.sendStatus(500);
-    });
+  const apiToken = process.env.MONDAY_API_KEY;
+  monday.setToken(apiToken)
 
   const shipdayClient = new Shipday(process.env[storeApi] || process.env.MAIN_SHIPDAY_API, 10000);
 
@@ -51,6 +44,28 @@ app.post("/move-order-to-shipday", function (req, res) {
     console.error("Invalid pickup time format.");
     return res.status(400).send("Bad request: Invalid pickup time format.");
   }
+
+  const addRowQuery = `
+    mutation {
+      create_item (
+          board_id: 6343774897,
+          group_id: "topics",
+          item_name: "${payload.job_id}",
+          column_values: "{\\"status\\": \\"Pending\\", \\"text7\\": \\"${payload.task_type == 1 ? "Pickup" : "Delivery"}\\", \\"text\\": \\"${payload.merchant_name}\\", \\"text5\\": \\"${payload.customer_username}\\", \\"date4\\": {\\"date\\":\\"${convertDateFormat(deliveryTime[0])}\\", \\"time\\":\\"${convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2])}\\"}, \\"date\\": {\\"date\\":\\"${convertDateFormat(deliveryTime[0])}\\", \\"time\\":\\"${convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2])}\\"}, \\"location\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_pickup_address}\\"}, \\"location3\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_address}\\"}}"
+          ) {
+          id
+      }
+  }
+  `;
+
+  monday.api(addRowQuery)
+  .then(response => {
+    console.log('Webhook sent to Zapier:', response.data);
+    // res.sendStatus(200);
+  }).catch((err)=>{
+    console.error('Error sending webhook to Zapier:', err);
+    // res.sendStatus(500);
+  })
 
   const orderInfoRequest = new OrderInfoRequest(
     payload.job_id,
@@ -141,7 +156,15 @@ app.post("/edit-order-on-Monday", function(req, res) {
       payload.columnId = itemId;
       console.log('coulmn id is', payload.columnId)
 
-      axios.post('https://hooks.zapier.com/hooks/catch/18380139/3poxutk/', payload)
+      const addRowQuery = `
+        mutation {
+        change_column_value(item_id: ${itemId}, board_id: 6343774897, column_id: "status", value: "{\\"label\\": \\"${payload.job_status == 13 ? "Completed" : "Cancelled"}\\"}") {
+          id
+        }
+      }
+      `;
+
+      monday.api(addRowQuery)
       .then(response => {
         console.log('Webhook sent to Zapier:');
         res.sendStatus(200);
@@ -160,23 +183,6 @@ app.post("/edit-order-on-Monday", function(req, res) {
     console.error('Error updating item:', error);
     res.status(500).send('Internal Server Error');
   });
-
-  // Test Code ends her
-  // axios.post(process.env.XPRESSRUN_URL, payload, {
-  //   headers: {
-  //       'X-Yelo-Token': process.env.XPRESSRUN_TOKEN,
-  //       'Content-Type': 'application/json'
-  //   }
-  // })
-  // .then(response => {
-  //     console.log('Request sent to Xpressrun API:', response.data);
-  //     // Handle response as needed
-  // })
-  // .catch(error => {
-  //     console.error('Error sending request to Xpressrun API:', error);
-  //     // Handle error as needed
-  // });
-  // res.send("Order Edited");
 })
 
 function convertDateFormat(dateString) {
