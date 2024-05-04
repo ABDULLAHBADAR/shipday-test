@@ -51,7 +51,7 @@ app.post("/move-order-to-shipday", function (req, res) {
           board_id: 6343774897,
           group_id: "topics",
           item_name: "${payload.job_id}",
-          column_values: "{\\"status\\": \\"Pending\\", \\"text7\\": \\"${payload.task_type == 1 ? "Pickup" : "Delivery"}\\", \\"text\\": \\"${payload.merchant_name}\\", \\"text5\\": \\"${payload.customer_username}\\", \\"date4\\": {\\"date\\":\\"${convertDateFormat(deliveryTime[0])}\\", \\"time\\":\\"${convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2])}\\"}, \\"date\\": {\\"date\\":\\"${convertDateFormat(deliveryTime[0])}\\", \\"time\\":\\"${convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2])}\\"}, \\"location\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_pickup_address}\\"}, \\"location3\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_address}\\"}}"
+          column_values: "{\\"status\\": \\"Pending\\", \\"text7\\": \\"${payload.task_type == 1 ? "Pickup" : "Delivery"}\\", \\"text\\": \\"${payload.merchant_name}\\", \\"text5\\": \\"${payload.customer_username}\\", \\"date4\\": {\\"date\\":\\"${convertDateFormat(deliveryTime[0])}\\", \\"time\\":\\"${convertTo24Hour(deliveryTime[1] + " " + deliveryTime[2])}\\"}, \\"location\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_pickup_address}\\"}, \\"location3\\": {\\"lat\\":\\"1\\", \\"lng\\":\\"1\\", \\"address\\":\\"${payload.job_address}\\"}}"
           ) {
           id
       }
@@ -61,12 +61,9 @@ app.post("/move-order-to-shipday", function (req, res) {
   monday.api(addRowQuery)
   .then(response => {
     console.log('Webhook sent to Zapier:', response.data);
-    // res.sendStatus(200);
   }).catch((err)=>{
     console.error('Error sending webhook to Zapier:', err);
-    // res.sendStatus(500);
   })
-
   const orderInfoRequest = new OrderInfoRequest(
     payload.job_id,
     payload.merchant_address === payload.job_address ? payload.merchant_name : payload.customer_username,
